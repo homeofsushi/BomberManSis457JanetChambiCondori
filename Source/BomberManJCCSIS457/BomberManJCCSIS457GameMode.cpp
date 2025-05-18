@@ -1,4 +1,67 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+
+#include "BomberManJCCSIS457GameMode.h"
+#include "UObject/ConstructorHelpers.h"
+#include "LaberintoBuilderAleatorio.h" // Asegúrate de incluir este encabezado
+#include "Templates/SharedPointer.h"
+#include "Engine/World.h"
+
+ABomberManJCCSIS457GameMode::ABomberManJCCSIS457GameMode()
+{
+    // Cargar las clases Blueprint
+    static ConstructorHelpers::FClassFinder<ABloqueBase> BloqueMaderaBP(TEXT("/Game/Bloques/BP_BloqueMadera"));
+    static ConstructorHelpers::FClassFinder<ABloqueBase> BloqueHierroBP(TEXT("/Game/Bloques/BP_BloqueHierro"));
+    static ConstructorHelpers::FClassFinder<AMoneda> MonedaBP(TEXT("/Game/Items/BP_Moneda"));
+    static ConstructorHelpers::FClassFinder<APuertaTeletransportadora> PuertaBP(TEXT("/Game/Items/BP_Puerta"));
+
+    // Crear el builder (ajusta los parámetros según tu lógica)
+    Builder = new LaberintoBuilderAleatorio(GetWorld(), FVector::ZeroVector, 10, 10, 100.0f);
+
+    // Pasar las clases al builder
+    if (BloqueMaderaBP.Succeeded()) Builder->SetClaseBloqueMadera(BloqueMaderaBP.Class);
+    if (BloqueHierroBP.Succeeded()) Builder->SetClaseBloqueHierro(BloqueHierroBP.Class);
+    if (MonedaBP.Succeeded()) Builder->SetClaseMoneda(MonedaBP.Class);
+    if (PuertaBP.Succeeded()) Builder->SetClasePuerta(PuertaBP.Class);
+
+    // Ahora puedes usar el builder normalmente
+}
+
+void ABomberManJCCSIS457GameMode::BeginPlay()
+{
+    Super::BeginPlay();
+
+    LaberintoBuilder = MakeShared<LaberintoBuilderAleatorio>(
+        GetWorld(),
+        FVector(LimiteXMin, LimiteYMin, 0),
+        AltoLaberinto,
+        AnchoLaberinto,
+        TamanoBloque
+    );
+    // Si tu builder necesita las clases, pásalas aquí (ajusta tu builder si es necesario)
+    LaberintoBuilder->ClaseBloqueMadera = ClaseBloqueMadera;
+    LaberintoBuilder->ClaseBloqueHierro = ClaseBloqueHierro;
+    LaberintoBuilder->ClaseMoneda = ClaseMoneda;
+    LaberintoBuilder->ClasePuerta = ClasePuerta;
+
+    LaberintoBuilder->LimiteXMin = LimiteXMin;
+    LaberintoBuilder->LimiteYMin = LimiteYMin;
+    LaberintoBuilder->LimiteXMax = LimiteXMax;
+    LaberintoBuilder->LimiteYMax = LimiteYMax;
+
+    LaberintoBuilder->CrearLaberinto();
+    LaberintoBuilder->AgregarBloques();
+    LaberintoBuilder->AgregarPuertas();
+    LaberintoBuilder->AgregarMoneda();
+
+    // Copia el array del laberinto para que otros actores puedan consultarlo
+    Laberinto = LaberintoBuilder->ObtenerLaberinto();
+}
+
+void ABomberManJCCSIS457GameMode::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+}
+
+/*// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "BomberManJCCSIS457GameMode.h"
 #include "BomberManJCCSIS457Character.h"
@@ -8,9 +71,13 @@
 #include "BloqueMadera.h"
 #include "BloqueAcero.h"
 #include "Moneda.h"
+#include "LaberintoBuilderAleatorio.h"
+#include "ILaberintoBuilder.h"
+
+
 #include "BloqueLadrillo.h"
 #include "Engine/World.h"
-#include "BomberManJCCSIS457Character.h"
+
 #include <Kismet/GameplayStatics.h>
 
 ABomberManJCCSIS457GameMode::ABomberManJCCSIS457GameMode()
@@ -29,8 +96,22 @@ ABomberManJCCSIS457GameMode::ABomberManJCCSIS457GameMode()
 void ABomberManJCCSIS457GameMode::BeginPlay()
 {
     Super::BeginPlay(); 
-    CrearLaberinto();  
-    
+
+    // Instanciar el builder (puedes usar un director si lo tienes)
+    LaberintoBuilderAleatorio* Builder = new LaberintoBuilderAleatorio(
+        GetWorld(),
+        FVector(LimiteXMin, LimiteYMin, 0.0f),
+        AltoLaberinto,
+        AnchoLaberinto,
+        TamanoBloque
+    );
+
+    Builder->CrearLaberinto();
+    Builder->AgregarBloques();
+    Builder->AgregarPuertas();
+    Builder->AgregarMoneda();
+    //CrearLaberinto();  
+
     for (int32 i = 0; i < 5; i++)
     {
         FVector PosicionMoneda;
@@ -54,6 +135,7 @@ void ABomberManJCCSIS457GameMode::BeginPlay()
         FActorSpawnParameters SpawnParams;
         GetWorld()->SpawnActor<AMoneda>(AMoneda::StaticClass(), PosicionMoneda, FRotator::ZeroRotator, SpawnParams);
     }// Llamar a la función que genera el laberinto
+    
 }
 
 void ABomberManJCCSIS457GameMode::Tick(float DeltaTime)
@@ -153,4 +235,7 @@ void ABomberManJCCSIS457GameMode::CrearLaberinto()
         }
     }
 }
+
+*/
+
 
