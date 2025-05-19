@@ -23,123 +23,153 @@ void LaberintoBuilderAleatorio::CrearLaberinto()
 
 void LaberintoBuilderAleatorio::AgregarBloques()
 {
-    // Iniciar las variables
-    TamanoBloque = 100.0f;  // Tamaño de cada bloque
+    TamanoBloque = 100.0f;
     AnchoLaberinto = (LimiteXMax - LimiteXMin) / TamanoBloque;
     AltoLaberinto = (LimiteYMax - LimiteYMin) / TamanoBloque;
 
+    // Validar dimensiones
+    if (AnchoLaberinto <= 0 || AltoLaberinto <= 0) {
+        UE_LOG(LogTemp, Error, TEXT("Dimensiones del laberinto inválidas."));
+        return;
+    }
+
+    // Inicializar el laberinto
+    CrearLaberinto();
+
     int32 TotalBloques = AnchoLaberinto * AltoLaberinto;
-    int32 BloquesOcupados = FMath::RoundToInt(TotalBloques * 0.4f); // 40% del espacio
+    int32 BloquesOcupados = FMath::RoundToInt(TotalBloques * 0.4f);
 
-    while (BloquesOcupados > 0)
+    int intentosMaximos = 10000;
+    int intentos = 0;
+
+    while (BloquesOcupados > 0 && intentos < intentosMaximos)
     {
-        int32 PosX = FMath::RandRange(0, AnchoLaberinto - 1);
-        int32 PosY = FMath::RandRange(0, AltoLaberinto - 1);
+        intentos++;
+        int intentosInternos = 0;
+        const int intentosInternosMax = 1000; // Límite de intentos internos
 
-        int32 Index = PosY * AnchoLaberinto + PosX;
-        if (Index < 0 || Index >= Laberinto.Num() || Laberinto[Index] != 0)
+        while (BloquesOcupados > 0 && intentosInternos < intentosInternosMax)
         {
-            continue; // Si no es válida, intenta con otra posición
-        }
+            intentosInternos++;
+            int32 PosX = FMath::RandRange(0, AnchoLaberinto - 1);
+            int32 PosY = FMath::RandRange(0, AltoLaberinto - 1);
 
-        int32 GrupoTamano = FMath::RandRange(3, 6);
-        TArray<int32> TiposBloques = { 1, 2, 3, 4 };
-        TArray<int32> BloquesUsados;
-
-        for (int32 i = 0; i < GrupoTamano && BloquesOcupados > 0; i++)
-        {
-            // Verificar que la posición esté vacía y dentro de los límites
-            Index = PosY * AnchoLaberinto + PosX;
-            if (Index >= 0 && Index < Laberinto.Num() && Laberinto[Index] == 0)
+            int32 Index = PosY * AnchoLaberinto + PosX;
+            if (Index < 0 || Index >= Laberinto.Num() || Laberinto[Index] != 0)
             {
-                // Elegir un tipo de bloque aleatorio
-                int32 TipoBloque;
-                if (BloquesUsados.Num() < 3)
-                {
-                    TipoBloque = TiposBloques.Pop(); // Sacar un tipo de bloque distinto
-                    BloquesUsados.Add(TipoBloque);
-                }
-                else
-                {
-                    // Elegir cualquier tipo de bloque después de los primeros 3
-                    TipoBloque = 4;
-                }
-
-                Laberinto[Index] = TipoBloque;
-                BloquesOcupados--;
-
-                // Instanciar el bloque en el mundo
-                FVector PosicionBloque = FVector(LimiteXMin + PosX * TamanoBloque, LimiteYMin + PosY * TamanoBloque, 0.0f);
-                FActorSpawnParameters SpawnParams;
-
-                // Determinar la clase del bloque usando las variables miembro
-                TSubclassOf<ABloqueBase> ClaseBloque = nullptr;
-                switch (TipoBloque)
-                {
-                case 1:
-                    ClaseBloque = ClaseBloqueMadera;
-                    break;
-                case 2:
-                    ClaseBloque = ClaseBloqueHierro;
-                    break;
-                case 3:
-                    ClaseBloque = ABloqueAcero::StaticClass(); // Si tienes un BP, pásalo igual que los otros
-                    break;
-                default:
-                    ClaseBloque = ABloquePared::StaticClass();
-                    break;
-                }
-                if (ClaseBloque)
-                {
-                    World->SpawnActor<ABloqueBase>(ClaseBloque, PosicionBloque, FRotator::ZeroRotator, SpawnParams);
-                }
+                continue; // Si no es válida, intenta con otra posición
             }
 
-            // Mover a una posición adyacente
-            int32 DeltaX = FMath::RandRange(-1, 1);
-            int32 DeltaY = FMath::RandRange(-1, 1);
+            int32 GrupoTamano = FMath::RandRange(3, 6);
+            TArray<int32> TiposBloques = { 1, 2, 3, 4 };
+            TArray<int32> BloquesUsados;
 
-            // Validar que la nueva posición esté dentro de los límites del laberinto
-            PosX = FMath::Clamp(PosX + DeltaX, 0, AnchoLaberinto - 1);
-            PosY = FMath::Clamp(PosY + DeltaY, 0, AltoLaberinto - 1);
+            for (int32 i = 0; i < GrupoTamano && BloquesOcupados > 0; i++)
+            {
+                Index = PosY * AnchoLaberinto + PosX;
+                if (Index >= 0 && Index < Laberinto.Num() && Laberinto[Index] == 0)
+                {
+                    int32 TipoBloque;
+                    if (BloquesUsados.Num() < 3)
+                    {
+                        TipoBloque = TiposBloques.Pop();
+                        BloquesUsados.Add(TipoBloque);
+                    }
+                    else
+                    {
+                        TipoBloque = 4;
+                    }
+
+                    Laberinto[Index] = TipoBloque;
+                    BloquesOcupados--;
+
+                    FVector PosicionBloque = FVector(LimiteXMin + PosX * TamanoBloque, LimiteYMin + PosY * TamanoBloque, 0.0f);
+                    FActorSpawnParameters SpawnParams;
+
+                    TSubclassOf<ABloqueBase> ClaseBloque = nullptr;
+                    switch (TipoBloque)
+                    {
+                    case 1:
+                        ClaseBloque = ClaseBloqueMadera;
+                        break;
+                    case 2:
+                        ClaseBloque = ClaseBloqueHierro;
+                        break;
+                    case 3:
+                        ClaseBloque = ABloqueAcero::StaticClass();
+                        break;
+                    default:
+                        ClaseBloque = ABloquePared::StaticClass();
+                        break;
+                    }
+                    if (ClaseBloque)
+                    {
+                        World->SpawnActor<ABloqueBase>(ClaseBloque, PosicionBloque, FRotator::ZeroRotator, SpawnParams);
+                    }
+                }
+
+                int32 DeltaX = FMath::RandRange(-1, 1);
+                int32 DeltaY = FMath::RandRange(-1, 1);
+
+                PosX = FMath::Clamp(PosX + DeltaX, 0, AnchoLaberinto - 1);
+                PosY = FMath::Clamp(PosY + DeltaY, 0, AltoLaberinto - 1);
+            }
+
+            for (int32 Separacion = 0; Separacion < 1; Separacion++)
+            {
+                PosX = FMath::RandRange(0, AnchoLaberinto - 1);
+                PosY = FMath::RandRange(0, AltoLaberinto - 1);
+            }
         }
 
-        // Separar el grupo con al menos 1 bloque vacío
-        for (int32 Separacion = 0; Separacion < 1; Separacion++)
+        if (intentosInternos >= intentosInternosMax)
         {
-            PosX = FMath::RandRange(0, AnchoLaberinto - 1);
-            PosY = FMath::RandRange(0, AltoLaberinto - 1);
+            UE_LOG(LogTemp, Warning, TEXT("Se alcanzó el máximo de intentos internos al colocar bloques. Puede que el laberinto esté lleno o no haya más posiciones válidas."));
+            break;
         }
     }
-}
-
-void LaberintoBuilderAleatorio::AgregarPuertas()
-{
-    // Aquí puedes enlazar las puertas entre sí si quieres (ej. usando un array dentro de APuertaTeletransportadora)
+    if (intentos >= intentosMaximos)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Se alcanzó el máximo de intentos al colocar bloques. Puede que el laberinto esté lleno."));
+    }
 }
 
 void LaberintoBuilderAleatorio::AgregarMoneda()
 {
+    if (Laberinto.Num() == 0) {
+        UE_LOG(LogTemp, Error, TEXT("El laberinto no está inicializado. Llama a CrearLaberinto() antes de AgregarMoneda()."));
+        return;
+    }
+
+    PosicionesMonedas.Empty();
+
     for (int32 i = 0; i < 5; i++)
     {
         FVector PosicionMoneda;
         bool PosicionValida = false;
+        int intentos = 0;
+        const int intentosMax = 1000;
 
-        // Buscar una posición vacía
-        while (!PosicionValida)
+        while (!PosicionValida && intentos < intentosMax)
         {
+            intentos++;
             int32 PosX = FMath::RandRange(0, AnchoLaberinto - 1);
             int32 PosY = FMath::RandRange(0, AltoLaberinto - 1);
             int32 Index = PosY * AnchoLaberinto + PosX;
 
-            if (Laberinto[Index] == 0) // Verificar que esté vacío
+            if (Index >= 0 && Index < Laberinto.Num() && Laberinto[Index] == 0)
             {
                 PosicionMoneda = FVector(LimiteXMin + PosX * TamanoBloque, LimiteYMin + PosY * TamanoBloque, 100.0f);
                 PosicionValida = true;
+                PosicionesMonedas.Add(PosicionMoneda);
             }
         }
 
-        // Instanciar la moneda usando la clase recibida
+        if (!PosicionValida) {
+            UE_LOG(LogTemp, Warning, TEXT("No se pudo encontrar una posición válida para la moneda %d."), i);
+            continue;
+        }
+
         FActorSpawnParameters SpawnParams;
         if (ClaseMoneda)
         {
@@ -147,6 +177,13 @@ void LaberintoBuilderAleatorio::AgregarMoneda()
         }
     }
 }
+
+
+void LaberintoBuilderAleatorio::AgregarPuertas()
+{
+    // Aquí puedes enlazar las puertas entre sí si quieres (ej. usando un array dentro de APuertaTeletransportadora)
+}
+
 
 // ... otras implementaciones de métodos de LaberintoBuilderAleatorio ...
 

@@ -57,6 +57,9 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Laberinto")
     TArray<int32> Laberinto;
 
+public:
+    FVector ObtenerPosicionLibreAleatoria();
+
 protected:
     virtual void BeginPlay() override;
 

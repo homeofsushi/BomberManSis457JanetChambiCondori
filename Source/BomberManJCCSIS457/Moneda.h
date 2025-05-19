@@ -28,9 +28,6 @@ private:
 	// Temporizador para alternar entre posiciones
 	FTimerHandle MovimientoTimerHandle;
 
-	// Método para alternar entre posiciones
-	void AlternarPosicion();
-
 
 protected:
 	// Componente de malla
@@ -64,6 +61,11 @@ protected:
 	
 	void CambiarDireccionRotacion();
 	FVector ObtenerPosicionValida();
+
+public:
+	void Teletransportar(FVector NuevaPosicion);
+	void TeletransporteAleatorio();
+
 
 
 protected:
